@@ -7,8 +7,10 @@ name = "pypi"
 fastapi = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 jmespath = "*"
+motor = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.10"

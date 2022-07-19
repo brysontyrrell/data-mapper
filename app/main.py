@@ -1,63 +1,13 @@
-from typing import Any, Union
-
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-import jmespath
-from jmespath.exceptions import ParseError
-from pydantic import BaseModel, validator
+
+from app.routers import mappings
 
 app = FastAPI()
-
-
-def iterdict(d):
-    for k, v in d.items():
-        print(k, v)
-        if isinstance(v, dict):
-            yield from iterdict(v)
-        else:
-            yield v
-
-
-def expressions_must_compile(value):
-    for i in iterdict(value):
-        try:
-            jmespath.compile(i)
-        except ParseError:
-            raise ValueError(f"Invalid JMESPath expression: {i}")
-
-
-class MappingDocument(BaseModel):
-    output: dict[str, dict]
-    stringExpressionValues: dict[str, str]
-
-    # validators
-    _output_expressions = validator("output", allow_reuse=True)(
-        expressions_must_compile
-    )
-    _string_expressions = validator("stringExpressionValues", allow_reuse=True)(
-        expressions_must_compile
-    )
-
-
-class Mapping(BaseModel):
-    name: str
-    document: MappingDocument
-
-
-class MappingRead(Mapping):
-    id: str
-
-
-class MappingList(BaseModel):
-    items: list[MappingRead]
-
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request, exc):
-    return JSONResponse(jsonable_encoder({"detail": exc.errors()}), status_code=400)
+app.include_router(mappings.router)
 
 
 @app.get("/")
@@ -65,14 +15,9 @@ async def root():
     return "Data Mapper"
 
 
-@app.post("/mappings", response_model=MappingRead)
-async def mappings_create(mapping: Mapping):
-    return mapping
-
-
-@app.get("/mappings", response_model=MappingList)
-async def get_mappings():
-    return []
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(jsonable_encoder({"detail": exc.errors()}), status_code=400)
 
 
 # This is a LOT just to fix 422 -> 400
