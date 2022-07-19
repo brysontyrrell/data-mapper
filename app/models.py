@@ -32,7 +32,6 @@ class BaseModel(PydanticBaseModel):
         return super().dict(*args, **kwargs)
 
     class Config(BaseConfig):
-        # fields = {"id": "_id"}
         allow_population_by_field_name = True
         json_encoders = {
             datetime.datetime: lambda dt: dt.isoformat(),
@@ -50,8 +49,8 @@ def expressions_must_compile(value):
 
 
 class MappingDocument(BaseModel):
-    mapping: dict[str, dict] | None
-    stringExpressionValues: Optional[dict[str, str]] | None
+    mapping: dict[str, dict]
+    stringExpressionValues: Optional[dict[str, str]]
 
     # validators
     _mapping_expressions = validator("mapping", allow_reuse=True)(

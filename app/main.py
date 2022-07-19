@@ -10,7 +10,7 @@ app = FastAPI()
 app.include_router(mappings.router)
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     return "Data Mapper"
 
