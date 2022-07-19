@@ -8,6 +8,7 @@ from app.database import (
     db_read_mapping,
     db_list_mappings,
     db_update_mapping,
+    db_update_mapping_patch,
 )
 from app import models
 
@@ -34,8 +35,7 @@ async def list_mappings():
     status_code=201,
 )
 async def create_mapping(mapping: models.Mapping):
-    mapping = jsonable_encoder(mapping)
-    created_mapping = await db_create_mapping(mapping)
+    created_mapping = await db_create_mapping(jsonable_encoder(mapping))
     return created_mapping
 
 
@@ -63,6 +63,21 @@ async def update_student(*, id: str = PathId, mapping: models.Mapping):
     mapping_update = {k: v for k, v in mapping.dict().items() if v is not None}
 
     if not (updated_mapping := await db_update_mapping(id, mapping_update)):
+        raise HTTPException(status_code=404)
+
+    return updated_mapping
+
+
+@router.patch(
+    "/{id}",
+    response_model=models.MappingRead,
+    response_model_by_alias=False,
+    status_code=200,
+)
+async def update_patch_student(*, id: str = PathId, mapping: models.Mapping):
+    if not (
+        updated_mapping := await db_update_mapping_patch(id, jsonable_encoder(mapping))
+    ):
         raise HTTPException(status_code=404)
 
     return updated_mapping
