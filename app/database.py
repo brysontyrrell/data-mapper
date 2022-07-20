@@ -30,8 +30,10 @@ async def db_update_mapping(id_: str, item: dict):
         update_result = await mappings_db["mappings"].update_one(
             {"_id": ObjectId(id_)}, {"$set": item}
         )
-        if update_result.modified_count != 1:
-            raise Exception  # Future error here
+        if update_result.matched_count != 1:
+            # TODO: .modified_count only increments if there was a change
+            # Potential use for response context on updates? Applies to PUT also.
+            raise Exception(update_result.raw_result)  # Future error here
 
     return await db_read_mapping(id_)
 
