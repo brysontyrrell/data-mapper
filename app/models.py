@@ -1,15 +1,15 @@
 import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from bson import ObjectId
 import jmespath
 from jmespath.exceptions import ParseError
-from pydantic import BaseConfig, Field, validator
+from pydantic import BaseConfig, Field, root_validator, validator
 from pydantic import BaseModel as PydanticBaseModel
 
-from app.utils import iterdict
 
-
+# `PyObjectId` and `BaseModel` adopted from this GitHub issue:
+# https://github.com/tiangolo/fastapi/issues/1515
 class PyObjectId(ObjectId):
     @classmethod
     def __get_validators__(cls):
@@ -39,35 +39,76 @@ class BaseModel(PydanticBaseModel):
         }
 
 
-def expressions_must_compile(value):
-    for i in iterdict(value):
+# Fix API docs showing "_id" and not "id"
+# https://github.com/tiangolo/fastapi/issues/1515#issuecomment-1072526469
+def _mongo_id_mutator(cls, values) -> dict:
+    if "_id" in values:
+        values["id"] = values["_id"]
+        del values["_id"]
+    return values
+
+
+def mongo_id_mutator() -> classmethod:
+    decorator = root_validator(pre=True, allow_reuse=True)
+    validation = decorator(_mongo_id_mutator)
+    return validation
+
+
+class MappingExpression(BaseModel):
+    inputExpression: Optional[str]
+    stringExpression: Optional[str]
+    constant: Optional[Union[str, int, float, bool]]
+    nestedExpressions: Optional[dict[str, "MappingExpression"]]
+
+    class Config:
+        extra = "forbid"
+
+    @validator("inputExpression")
+    def input_expressions(cls, value: str):
+        print(f"inputExpression Validation: {value}")
         try:
-            jmespath.compile(i)
+            jmespath.compile(value)
         except ParseError:
-            raise ValueError(f"Invalid JMESPath expression: {i}")
-    return value
+            raise ValueError(f"Invalid JMESPath expression: {value}")
+        return value
+
+    @root_validator(pre=True)
+    def only_one_expression(cls, values):
+        print(f"MappingExpression Only One: {values}")
+        if len(values) > 1:
+            raise ValueError("Only one expression type allowed")
+        return values
 
 
 class MappingDocument(BaseModel):
-    mapping: dict[str, dict]
+    mapping: dict[str, MappingExpression]
     stringExpressionValues: Optional[dict[str, str]]
 
-    # validators
-    _mapping_expressions = validator("mapping", allow_reuse=True)(
-        expressions_must_compile
-    )
-    _string_expressions = validator("stringExpressionValues", allow_reuse=True)(
-        expressions_must_compile
-    )
+    class Config:
+        extra = "forbid"
+
+    @validator("stringExpressionValues")
+    def input_expressions(cls, value: dict):
+        for k, v in value.items():
+            try:
+                jmespath.compile(v)
+            except ParseError:
+                raise ValueError(f"Invalid JMESPath expression: {value}")
+        return value
 
 
 class Mapping(BaseModel):
     name: str
     document: MappingDocument
 
+    class Config:
+        extra = "forbid"
+
 
 class MappingRead(Mapping):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PyObjectId = Field(default_factory=PyObjectId)
+
+    _id_validator: classmethod = mongo_id_mutator()
 
 
 class MappingList(BaseModel):
