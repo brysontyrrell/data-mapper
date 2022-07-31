@@ -105,11 +105,12 @@ class Mapping(BaseModel):
         extra = "forbid"
 
 
-class MappingRead(Mapping):
+class MappingResponse(Mapping):
     id: PyObjectId = Field(default_factory=PyObjectId)
 
     _id_validator: classmethod = mongo_id_mutator()
 
 
-class MappingList(BaseModel):
-    items: list[MappingRead]
+class MappingListResponse(BaseModel):
+    items: list[MappingResponse]
+
