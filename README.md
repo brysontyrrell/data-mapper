@@ -142,3 +142,5 @@ Create a mapping using the `/mappings` APIs and then transform data using a mapp
 ## About this project
 
 This was a learning exercise for me to get back into non-AWS stacks. They key tech I wanted to explore here was FastAPI and MongoDB. There are some comments throughout the code linking back to articles and/or GitHub issues that helped navigate some of the edge cases I encountered.
+
+If you have suggestions, drop them in issues. This project is not meant to be a live, supported service and there is no guarantee of support if you are running it in your environment.
