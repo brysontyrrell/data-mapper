@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from bson import ObjectId
 import jmespath
@@ -114,3 +114,16 @@ class MappingResponse(Mapping):
 class MappingListResponse(BaseModel):
     items: list[MappingResponse]
 
+
+class TransformInput(BaseModel):
+    __root__: dict[Any, Any]
+
+    class Config:
+        schema_extra = {"example": {"foo": "bar"}}
+
+
+class TransformOutput(BaseModel):
+    __root__: dict[Any, Any]
+
+    class Config:
+        schema_extra = {"example": {"bar": "baz"}}

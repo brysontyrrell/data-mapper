@@ -4,10 +4,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
-from app.routers import mappings
+from app.routers import mappings, transform
 
 app = FastAPI()
 app.include_router(mappings.router)
+app.include_router(transform.router)
 
 
 @app.get("/", include_in_schema=False)
@@ -27,8 +28,8 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Data Mapper",
-        version="0.0.1",
-        description="The Data Mapper API",
+        version="2022.07.31",
+        description="Manage mappings that can be applied as transformations to JSON data.",
         routes=app.routes,
     )
     for path in openapi_schema["paths"]:
