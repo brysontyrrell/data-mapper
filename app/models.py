@@ -57,7 +57,7 @@ def mongo_id_mutator() -> classmethod:
 class MappingExpression(BaseModel):
     inputExpression: Optional[str]
     stringExpression: Optional[str]
-    constant: Optional[Union[str, int, float, bool]]
+    constant: Optional[Any]
     nestedExpressions: Optional[dict[str, "MappingExpression"]]
 
     class Config:
